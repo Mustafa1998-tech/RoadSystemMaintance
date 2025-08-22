@@ -1,0 +1,1030 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Previous styles remain the same */
+    
+    /* New styles for controls */
+    .map-controls {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .control-btn {
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        border-radius: 8px;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s;
+    }
+    
+    .control-btn:hover {
+        background: #fff;
+        transform: translateY(-2px);
+    }
+    
+    .control-btn i {
+        font-size: 1.2rem;
+        color: #333;
+    }
+    
+    .control-btn i {
+        font-size: 1.2rem;
+        color: #333;
+    }
+    
+    .dark .control-btn {
+        background: rgba(31, 41, 55, 0.9);
+    }
+    
+    .dark .control-btn i {
+        color: #fff;
+    }
+    
+    /* Weather controls */
+    .weather-controls {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 10px;
+        border-radius: 8px;
+        z-index: 100;
+    }
+    
+    .dark .weather-controls {
+        background: rgba(31, 41, 55, 0.9);
+        color: white;
+    }
+    
+    /* Measurement tools */
+    .measurement-tooltip {
+        position: absolute;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        pointer-events: none;
+        font-size: 12px;
+        z-index: 1000;
+    }
+    
+    /* Search panel */
+    .search-panel {
+        position: absolute;
+        top: 70px;
+        right: 20px;
+        width: 300px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 100;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    
+    .dark .search-panel {
+        background: rgba(31, 41, 55, 0.95);
+        color: white;
+    }
+    
+    .search-result-item {
+        padding: 8px 0;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+    }
+    
+    .dark .search-result-item {
+        border-color: #4b5563;
+    }
+    
+    .search-result-item:hover {
+        background: #f5f5f5;
+    }
+    
+    .dark .search-result-item:hover {
+        background: #374151;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Previous content remains the same until the map container -->
+
+<div id="map-container" class="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+    <div id="map"></div>
+    
+    <!-- Map Controls -->
+    <div class="map-controls">
+        <button id="search-toggle" class="control-btn" title="Search Issues">
+            <i class="fas fa-search"></i>
+        </button>
+        <button id="measure-toggle" class="control-btn" title="Measure Distance">
+            <i class="fas fa-ruler"></i>
+        </button>
+        <button id="draw-toggle" class="control-btn" title="Draw on Map">
+            <i class="fas fa-draw-polygon"></i>
+        </button>
+        <button id="weather-toggle" class="control-btn" title="Weather Controls">
+            <i class="fas fa-cloud-sun"></i>
+        </button>
+        <button id="fullscreen-toggle" class="control-btn" title="Toggle Fullscreen">
+            <i class="fas fa-expand"></i>
+        </button>
+    </div>
+    
+    <!-- Search Panel -->
+    <div id="search-panel" class="search-panel hidden">
+        <div class="relative">
+            <input type="text" id="search-input" 
+                   class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md 
+                          bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                   placeholder="Search issues...">
+            <div id="search-results" class="mt-2">
+                <!-- Search results will be populated here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Weather Controls -->
+    <div id="weather-controls" class="weather-controls hidden">
+        <h4 class="font-semibold mb-2">Weather Effects</h4>
+        <div class="space-y-2">
+            <div class="flex items-center justify-between">
+                <span>Time of Day:</span>
+                <select id="time-of-day" class="bg-white dark:bg-gray-800 border rounded px-2 py-1">
+                    <option value="day">Day</option>
+                    <option value="night">Night</option>
+                    <option value="sunrise">Sunrise</option>
+                    <option value="sunset">Sunset</option>
+                </select>
+            </div>
+            <div class="flex items-center justify-between">
+                <span>Weather:</span>
+                <select id="weather-type" class="bg-white dark:bg-gray-800 border rounded px-2 py-1">
+                    <option value="clear">Clear</option>
+                    <option value="rain">Rain</option>
+                    <option value="snow">Snow</option>
+                    <option value="fog">Fog</option>
+                </select>
+            </div>
+            <div class="flex items-center justify-between">
+                <span>Intensity:</span>
+                <input type="range" id="weather-intensity" min="0" max="1" step="0.1" value="0.5" 
+                       class="w-24">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Map overlay remains the same -->
+    <div class="map-overlay">
+        <h3 class="font-semibold text-lg mb-2">Map Legend</h3>
+        <div class="map-legend">
+            <div class="legend-item">
+                <div class="legend-color bg-red-500"></div>
+                <span>High Priority</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color bg-yellow-500"></div>
+                <span>Medium Priority</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color bg-green-500"></div>
+                <span>Low Priority</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Measurement tooltip -->
+    <div id="measurement-tooltip" class="measurement-tooltip hidden"></div>
+</div>
+
+<!-- Rest of the content remains the same -->
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Existing Three.js and OrbitControls scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<!-- Add new dependencies -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+
+<script>
+// Global variables
+let scene, camera, renderer, controls, composer, bloomPass;
+let isMeasuring = false;
+let isDrawing = false;
+let measurementPoints = [];
+let drawingPoints = [];
+let currentWeather = 'clear';
+let currentTime = 'day';
+
+// Initialize the 3D scene
+function init() {
+    // Previous initialization code...
+    
+    // Add post-processing for better visuals
+    initPostProcessing();
+    
+    // Add event listeners for new features
+    setupEventListeners();
+    
+    // Start WebSocket connection for real-time updates
+    initWebSocket();
+    
+    // Start animation loop
+    animate();
+}
+
+// Initialize post-processing effects
+function initPostProcessing() {
+    const renderScene = new THREE.RenderPass(scene, camera);
+    
+    bloomPass = new THREE.UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        1.5,  // Strength
+        0.4,  // Radius
+        0.85  // Threshold
+    );
+    
+    composer = new THREE.EffectComposer(renderer);
+    composer.addPass(renderScene);
+    composer.addPass(bloomPass);
+}
+
+// Setup event listeners for UI controls
+function setupEventListeners() {
+    // Toggle search panel
+    document.getElementById('search-toggle').addEventListener('click', toggleSearchPanel);
+    
+    // Toggle measurement tool
+    document.getElementById('measure-toggle').addEventListener('click', toggleMeasurementTool);
+    
+    // Toggle drawing tool
+    document.getElementById('draw-toggle').addEventListener('click', toggleDrawingTool);
+    
+    // Toggle weather controls
+    document.getElementById('weather-toggle').addEventListener('click', toggleWeatherControls);
+    
+    // Fullscreen toggle
+    document.getElementById('fullscreen-toggle').addEventListener('click', toggleFullscreen);
+    
+    // Weather controls
+    document.getElementById('time-of-day').addEventListener('change', updateTimeOfDay);
+    document.getElementById('weather-type').addEventListener('change', updateWeather);
+    document.getElementById('weather-intensity').addEventListener('input', updateWeather);
+    
+    // Search functionality
+    document.getElementById('search-input').addEventListener('input', handleSearch);
+    
+    // Map click events
+    renderer.domElement.addEventListener('click', handleMapClick);
+    renderer.domElement.addEventListener('mousemove', handleMapHover);
+}
+
+// WebSocket for real-time updates
+function initWebSocket() {
+    const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const wsUrl = `${wsScheme}://${window.location.host}/ws/issues/`;
+    const socket = new WebSocket(wsUrl);
+    
+    socket.onopen = () => {
+        console.log('WebSocket connection established');
+    };
+    
+    socket.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        handleRealTimeUpdate(data);
+    };
+    
+    socket.onclose = () => {
+        console.log('WebSocket connection closed');
+        // Attempt to reconnect after 5 seconds
+        setTimeout(initWebSocket, 5000);
+    };
+}
+
+// Handle real-time updates from WebSocket
+function handleRealTimeUpdate(data) {
+    // Update the 3D scene based on the received data
+    // This could be adding, updating, or removing issues
+    console.log('Received update:', data);
+    
+    // Example: Add a new issue marker
+    if (data.action === 'issue_created') {
+        addIssueMarker(
+            data.longitude, 
+            data.latitude, 
+            getPriorityColor(data.priority),
+            data.id,
+            data.title
+        );
+    }
+    
+    // Add more update handlers as needed
+}
+
+// Toggle search panel visibility
+function toggleSearchPanel() {
+    const panel = document.getElementById('search-panel');
+    panel.classList.toggle('hidden');
+    
+    // Close other panels
+    document.getElementById('weather-controls').classList.add('hidden');
+}
+
+// Toggle measurement tool
+function toggleMeasurementTool() {
+    isMeasuring = !isMeasuring;
+    isDrawing = false; // Disable drawing if active
+    
+    // Update UI
+    const btn = document.getElementById('measure-toggle');
+    btn.classList.toggle('bg-blue-100', isMeasuring);
+    
+    if (!isMeasuring) {
+        // Clear measurement points
+        clearMeasurementPoints();
+    }
+}
+
+// Toggle drawing tool
+function toggleDrawingTool() {
+    isDrawing = !isDrawing;
+    isMeasuring = false; // Disable measuring if active
+    
+    // Update UI
+    const btn = document.getElementById('draw-toggle');
+    btn.classList.toggle('bg-blue-100', isDrawing);
+    
+    if (!isDrawing) {
+        // Clear drawing
+        clearDrawing();
+    }
+}
+
+// Toggle weather controls
+function toggleWeatherControls() {
+    const controls = document.getElementById('weather-controls');
+    controls.classList.toggle('hidden');
+    
+    // Close other panels
+    document.getElementById('search-panel').classList.add('hidden');
+}
+
+// Toggle fullscreen mode
+function toggleFullscreen() {
+    const elem = document.getElementById('map-container');
+    
+    if (!document.fullscreenElement) {
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) { /* Safari */
+            elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) { /* IE11 */
+            elem.msRequestFullscreen();
+        }
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) { /* Safari */
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) { /* IE11 */
+            document.msExitFullscreen();
+        }
+    }
+}
+
+// Handle map clicks
+function handleMapClick(event) {
+    if (isMeasuring) {
+        // Handle measurement point placement
+        addMeasurementPoint(event);
+    } else if (isDrawing) {
+        // Handle drawing point placement
+        addDrawingPoint(event);
+    }
+}
+
+// Handle map hover for measurement tooltip
+function handleMapHover(event) {
+    if (!isMeasuring) return;
+    
+    // Update measurement tooltip position
+    const tooltip = document.getElementById('measurement-tooltip');
+    tooltip.style.left = `${event.clientX + 10}px`;
+    tooltip.style.top = `${event.clientY + 10}px`;
+    
+    if (measurementPoints.length > 0) {
+        // Calculate distance from last point to cursor
+        const lastPoint = measurementPoints[measurementPoints.length - 1];
+        const distance = calculateDistance(lastPoint, getMousePosition(event));
+        tooltip.textContent = `${distance.toFixed(2)} m`;
+        tooltip.classList.remove('hidden');
+    }
+}
+
+// Update time of day
+function updateTimeOfDay() {
+    currentTime = document.getElementById('time-of-day').value;
+    
+    // Update scene lighting based on time of day
+    switch (currentTime) {
+        case 'night':
+            // Dim the ambient light and adjust directional light
+            scene.traverse((obj) => {
+                if (obj.isLight) {
+                    if (obj.type === 'AmbientLight') {
+                        obj.intensity = 0.2;
+                    } else if (obj.type === 'DirectionalLight') {
+                        obj.intensity = 0.5;
+                        obj.position.set(5, 10, 7);
+                        obj.color.set(0x4477aa);
+                    }
+                }
+            });
+            break;
+            
+        case 'sunrise':
+            // Warm, low-angle light
+            scene.traverse((obj) => {
+                if (obj.isLight) {
+                    if (obj.type === 'AmbientLight') {
+                        obj.intensity = 0.8;
+                    } else if (obj.type === 'DirectionalLight') {
+                        obj.intensity = 1.2;
+                        obj.position.set(5, 5, 5);
+                        obj.color.set(0xffaa66);
+                    }
+                }
+            });
+            break;
+            
+        case 'sunset':
+            // Warm, low-angle light from the west
+            scene.traverse((obj) => {
+                if (obj.isLight) {
+                    if (obj.type === 'AmbientLight') {
+                        obj.intensity = 0.7;
+                    } else if (obj.type === 'DirectionalLight') {
+                        obj.intensity = 1.0;
+                        obj.position.set(-5, 5, 5);
+                        obj.color.set(0xff9966);
+                    }
+                }
+            });
+            break;
+            
+        default: // day
+            // Bright, neutral lighting
+            scene.traverse((obj) => {
+                if (obj.isLight) {
+                    if (obj.type === 'AmbientLight') {
+                        obj.intensity = 1.0;
+                    } else if (obj.type === 'DirectionalLight') {
+                        obj.intensity = 1.5;
+                        obj.position.set(10, 20, 10);
+                        obj.color.set(0xffffff);
+                    }
+                }
+            });
+    }
+}
+
+// Update weather effects
+function updateWeather() {
+    const weatherType = document.getElementById('weather-type').value;
+    const intensity = parseFloat(document.getElementById('weather-intensity').value);
+    
+    if (currentWeather !== weatherType) {
+        // Remove previous weather effects
+        clearWeatherEffects();
+        currentWeather = weatherType;
+    }
+    
+    switch (weatherType) {
+        case 'rain':
+            addRainEffect(intensity);
+            break;
+            
+        case 'snow':
+            addSnowEffect(intensity);
+            break;
+            
+        case 'fog':
+            addFogEffect(intensity);
+            break;
+            
+        default: // clear
+            // No special effects for clear weather
+            break;
+    }
+}
+
+// Add rain effect
+function addRainEffect(intensity) {
+    // Implementation for rain effect
+    // This would create particle systems for raindrops
+    console.log(`Adding rain effect with intensity: ${intensity}`);
+    
+    // Update post-processing for rain effect
+    if (bloomPass) {
+        bloomPass.strength = 0.8 + (intensity * 0.4);
+    }
+    
+    // Add fog for atmosphere
+    scene.fog = new THREE.FogExp2(0x666666, 0.01 * intensity);
+}
+
+// Add snow effect
+function addSnowEffect(intensity) {
+    // Implementation for snow effect
+    console.log(`Adding snow effect with intensity: ${intensity}`);
+    
+    // Update post-processing for snow effect
+    if (bloomPass) {
+        bloomPass.strength = 0.7 + (intensity * 0.3);
+    }
+    
+    // Add fog for atmosphere
+    scene.fog = new THREE.FogExp2(0xeeeeee, 0.005 * intensity);
+}
+
+// Add fog effect
+function addFogEffect(intensity) {
+    // Implementation for fog effect
+    console.log(`Adding fog effect with intensity: ${intensity}`);
+    
+    // Add fog
+    scene.fog = new THREE.FogExp2(0xcccccc, 0.02 * intensity);
+    
+    // Adjust post-processing for foggy look
+    if (bloomPass) {
+        bloomPass.strength = 0.5;
+    }
+}
+
+// Clear all weather effects
+function clearWeatherEffects() {
+    // Remove fog
+    scene.fog = null;
+    
+    // Reset post-processing
+    if (bloomPass) {
+        bloomPass.strength = 1.0;
+    }
+    
+    // Remove any weather-related objects from the scene
+    // (implementation depends on how you add weather effects)
+}
+
+// Handle search input
+function handleSearch(event) {
+    const query = event.target.value.toLowerCase();
+    const resultsContainer = document.getElementById('search-results');
+    
+    // Clear previous results
+    resultsContainer.innerHTML = '';
+    
+    if (query.length < 2) return;
+    
+    // In a real app, you would make an API call here
+    // For now, we'll simulate search results
+    const mockResults = [
+        { id: 1, title: 'Pothole on Main St', priority: 'high', type: 'pothole' },
+        { id: 2, title: 'Broken traffic light', priority: 'medium', type: 'traffic_light' },
+        { id: 3, title: 'Fallen tree on Oak Ave', priority: 'high', type: 'obstacle' },
+        { id: 4, title: 'Garbage collection needed', priority: 'low', type: 'garbage' },
+    ].filter(item => 
+        item.title.toLowerCase().includes(query) ||
+        item.type.toLowerCase().includes(query)
+    );
+    
+    // Display results
+    mockResults.forEach(result => {
+        const item = document.createElement('div');
+        item.className = 'search-result-item';
+        item.innerHTML = `
+            <div class="font-medium">${result.title}</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">
+                Priority: <span class="${getPriorityTextClass(result.priority)}">${result.priority}</span>
+            </div>
+        `;
+        
+        item.addEventListener('click', () => {
+            // Center the map on the selected issue
+            centerOnIssue(result);
+            // Close the search panel
+            document.getElementById('search-panel').classList.add('hidden');
+        });
+        
+        resultsContainer.appendChild(item);
+    });
+}
+
+// Center the map on a specific issue
+function centerOnIssue(issue) {
+    // In a real app, you would have the coordinates of the issue
+    // For now, we'll just log it
+    console.log(`Centering on issue: ${issue.title}`);
+    
+    // Animate camera to the issue location
+    // This is a simplified example - you'd use the actual coordinates
+    const targetPosition = new THREE.Vector3(
+        Math.random() * 10 - 5,
+        10,
+        Math.random() * 10 - 5
+    );
+    
+    // Animate camera to the target position
+    gsap.to(camera.position, {
+        x: targetPosition.x,
+        y: targetPosition.y,
+        z: targetPosition.z,
+        duration: 1,
+        onUpdate: () => {
+            controls.target = new THREE.Vector3(
+                targetPosition.x,
+                0,
+                targetPosition.z
+            );
+            controls.update();
+        }
+    });
+}
+
+// Helper function to get priority color
+function getPriorityColor(priority) {
+    switch (priority) {
+        case 'high': return 0xef4444; // red
+        case 'medium': return 0xf59e0b; // yellow
+        case 'low': return 0x10b981; // green
+        default: return 0x3b82f6; // blue
+    }
+}
+
+// Helper function to get priority text class
+function getPriorityTextClass(priority) {
+    switch (priority) {
+        case 'high': return 'text-red-600 dark:text-red-400';
+        case 'medium': return 'text-yellow-600 dark:text-yellow-400';
+        case 'low': return 'text-green-600 dark:text-green-400';
+        default: return 'text-gray-600 dark:text-gray-400';
+    }
+}
+
+// Initialize the application when the DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    init();
+    
+    // Add GSAP for animations if not already included
+    if (typeof gsap === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js';
+        document.head.appendChild(script);
+    }
+});
+</script>
+
+<!-- Previous styles and scripts remain the same -->
+{% endblock %}
+    document.getElementById('search-panel').classList.add('hidden');
+}
+
+// Toggle fullscreen mode
+function toggleFullscreen() {
+    const elem = document.getElementById('map-container');
+    
+    if (!document.fullscreenElement) {
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) { /* Safari */
+            elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) { /* IE11 */
+            elem.msRequestFullscreen();
+        }
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) { /* Safari */
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) { /* IE11 */
+            document.msExitFullscreen();
+        }
+    }
+}
+
+// Handle map clicks
+function handleMapClick(event) {
+    if (isMeasuring) {
+        // Handle measurement point placement
+        addMeasurementPoint(event);
+    } else if (isDrawing) {
+        // Handle drawing point placement
+        addDrawingPoint(event);
+    }
+}
+
+// Handle map hover for measurement tooltip
+function handleMapHover(event) {
+    if (!isMeasuring) return;
+    
+    // Update measurement tooltip position
+    const tooltip = document.getElementById('measurement-tooltip');
+    tooltip.style.left = `${event.clientX + 10}px`;
+    tooltip.style.top = `${event.clientY + 10}px`;
+    
+    if (measurementPoints.length > 0) {
+        // Calculate distance from last point to cursor
+        const lastPoint = measurementPoints[measurementPoints.length - 1];
+        const distance = calculateDistance(lastPoint, getMousePosition(event));
+        tooltip.textContent = `${distance.toFixed(2)} m`;
+        tooltip.classList.remove('hidden');
+    }
+}
+
+// Update time of day
+function updateTimeOfDay() {
+    currentTime = document.getElementById('time-of-day').value;
+    
+    // Update scene lighting based on time of day
+    switch (currentTime) {
+        case 'night':
+            // Dim the ambient light and adjust directional light
+            scene.traverse((obj) => {
+                if (obj.isLight) {
+                    if (obj.type === 'AmbientLight') {
+                        obj.intensity = 0.2;
+                    } else if (obj.type === 'DirectionalLight') {
+                        obj.intensity = 0.5;
+                        obj.position.set(5, 10, 7);
+                        obj.color.set(0x4477aa);
+                    }
+                }
+            });
+            break;
+            
+        case 'sunrise':
+            // Warm, low-angle light
+            scene.traverse((obj) => {
+                if (obj.isLight) {
+                    if (obj.type === 'AmbientLight') {
+                        obj.intensity = 0.8;
+                    } else if (obj.type === 'DirectionalLight') {
+                        obj.intensity = 1.2;
+                        obj.position.set(5, 5, 5);
+                        obj.color.set(0xffaa66);
+                    }
+                }
+            });
+            break;
+            
+        case 'sunset':
+            // Warm, low-angle light from the west
+            scene.traverse((obj) => {
+                if (obj.isLight) {
+                    if (obj.type === 'AmbientLight') {
+                        obj.intensity = 0.7;
+                    } else if (obj.type === 'DirectionalLight') {
+                        obj.intensity = 1.0;
+                        obj.position.set(-5, 5, 5);
+                        obj.color.set(0xff9966);
+                    }
+                }
+            });
+            break;
+            
+        default: // day
+            // Bright, neutral lighting
+            scene.traverse((obj) => {
+                if (obj.isLight) {
+                    if (obj.type === 'AmbientLight') {
+                        obj.intensity = 1.0;
+                    } else if (obj.type === 'DirectionalLight') {
+                        obj.intensity = 1.5;
+                        obj.position.set(10, 20, 10);
+                        obj.color.set(0xffffff);
+                    }
+                }
+            });
+    }
+}
+
+// Update weather effects
+function updateWeather() {
+    const weatherType = document.getElementById('weather-type').value;
+    const intensity = parseFloat(document.getElementById('weather-intensity').value);
+    
+    if (currentWeather !== weatherType) {
+        // Remove previous weather effects
+        clearWeatherEffects();
+        currentWeather = weatherType;
+    }
+    
+    switch (weatherType) {
+        case 'rain':
+            addRainEffect(intensity);
+            break;
+            
+        case 'snow':
+            addSnowEffect(intensity);
+            break;
+            
+        case 'fog':
+            addFogEffect(intensity);
+            break;
+            
+        default: // clear
+            // No special effects for clear weather
+            break;
+    }
+}
+
+// Add rain effect
+function addRainEffect(intensity) {
+    // Implementation for rain effect
+    // This would create particle systems for raindrops
+    console.log(`Adding rain effect with intensity: ${intensity}`);
+    
+    // Update post-processing for rain effect
+    if (bloomPass) {
+        bloomPass.strength = 0.8 + (intensity * 0.4);
+    }
+    
+    // Add fog for atmosphere
+    scene.fog = new THREE.FogExp2(0x666666, 0.01 * intensity);
+}
+
+// Add snow effect
+function addSnowEffect(intensity) {
+    // Implementation for snow effect
+    console.log(`Adding snow effect with intensity: ${intensity}`);
+    
+    // Update post-processing for snow effect
+    if (bloomPass) {
+        bloomPass.strength = 0.7 + (intensity * 0.3);
+    }
+    
+    // Add fog for atmosphere
+    scene.fog = new THREE.FogExp2(0xeeeeee, 0.005 * intensity);
+}
+
+// Add fog effect
+function addFogEffect(intensity) {
+    // Implementation for fog effect
+    console.log(`Adding fog effect with intensity: ${intensity}`);
+    
+    // Add fog
+    scene.fog = new THREE.FogExp2(0xcccccc, 0.02 * intensity);
+    
+    // Adjust post-processing for foggy look
+    if (bloomPass) {
+        bloomPass.strength = 0.5;
+    }
+}
+
+// Clear all weather effects
+function clearWeatherEffects() {
+    // Remove fog
+    scene.fog = null;
+    
+    // Reset post-processing
+    if (bloomPass) {
+        bloomPass.strength = 1.0;
+    }
+    
+    // Remove any weather-related objects from the scene
+    // (implementation depends on how you add weather effects)
+}
+
+// Handle search input
+function handleSearch(event) {
+    const query = event.target.value.toLowerCase();
+    const resultsContainer = document.getElementById('search-results');
+    
+    // Clear previous results
+    resultsContainer.innerHTML = '';
+    
+    if (query.length < 2) return;
+    
+    // In a real app, you would make an API call here
+    // For now, we'll simulate search results
+    const mockResults = [
+        { id: 1, title: 'Pothole on Main St', priority: 'high', type: 'pothole' },
+        { id: 2, title: 'Broken traffic light', priority: 'medium', type: 'traffic_light' },
+        { id: 3, title: 'Fallen tree on Oak Ave', priority: 'high', type: 'obstacle' },
+        { id: 4, title: 'Garbage collection needed', priority: 'low', type: 'garbage' },
+    ].filter(item => 
+        item.title.toLowerCase().includes(query) ||
+        item.type.toLowerCase().includes(query)
+    );
+    
+    // Display results
+    mockResults.forEach(result => {
+        const item = document.createElement('div');
+        item.className = 'search-result-item';
+        item.innerHTML = `
+            <div class="font-medium">${result.title}</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">
+                Priority: <span class="${getPriorityTextClass(result.priority)}">${result.priority}</span>
+            </div>
+        `;
+        
+        item.addEventListener('click', () => {
+            // Center the map on the selected issue
+            centerOnIssue(result);
+            // Close the search panel
+            document.getElementById('search-panel').classList.add('hidden');
+        });
+        
+        resultsContainer.appendChild(item);
+    });
+}
+
+// Center the map on a specific issue
+function centerOnIssue(issue) {
+    // In a real app, you would have the coordinates of the issue
+    // For now, we'll just log it
+    console.log(`Centering on issue: ${issue.title}`);
+    
+    // Animate camera to the issue location
+    // This is a simplified example - you'd use the actual coordinates
+    const targetPosition = new THREE.Vector3(
+        Math.random() * 10 - 5,
+        10,
+        Math.random() * 10 - 5
+    );
+    
+    // Animate camera to the target position
+    gsap.to(camera.position, {
+        x: targetPosition.x,
+        y: targetPosition.y,
+        z: targetPosition.z,
+        duration: 1,
+        onUpdate: () => {
+            controls.target = new THREE.Vector3(
+                targetPosition.x,
+                0,
+                targetPosition.z
+            );
+            controls.update();
+        }
+    });
+}
+
+// Helper function to get priority color
+function getPriorityColor(priority) {
+    switch (priority) {
+        case 'high': return 0xef4444; // red
+        case 'medium': return 0xf59e0b; // yellow
+        case 'low': return 0x10b981; // green
+        default: return 0x3b82f6; // blue
+    }
+}
+
+// Helper function to get priority text class
+function getPriorityTextClass(priority) {
+    switch (priority) {
+        case 'high': return 'text-red-600 dark:text-red-400';
+        case 'medium': return 'text-yellow-600 dark:text-yellow-400';
+        case 'low': return 'text-green-600 dark:text-green-400';
+        default: return 'text-gray-600 dark:text-gray-400';
+    }
+}
+
+// Initialize the application when the DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    init();
+    
+    // Add GSAP for animations if not already included
+    if (typeof gsap === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js';
+        document.head.appendChild(script);
+    }
+});
+</script>
+
+<!-- Previous styles and scripts remain the same -->
+{% endblock %}

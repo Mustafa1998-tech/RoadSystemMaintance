@@ -1,0 +1,120 @@
+<!-- Footer -->
+<footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+    <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <!-- Logo and description -->
+            <div class="space-y-4">
+                <div class="flex items-center">
+                    <div class="h-8 w-8 rounded-full bg-primary-500 flex items-center justify-center text-white font-bold">
+                        <i class="fas fa-road"></i>
+                    </div>
+                    <span class="ml-2 text-xl font-bold text-gray-900 dark:text-white">RoadMaint</span>
+                </div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                    A comprehensive road maintenance management system for tracking and resolving infrastructure issues efficiently.
+                </p>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white">
+                        <span class="sr-only">Facebook</span>
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="#" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white">
+                        <span class="sr-only">Twitter</span>
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="#" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white">
+                        <span class="sr-only">GitHub</span>
+                        <i class="fab fa-github"></i>
+                    </a>
+                    <a href="#" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white">
+                        <span class="sr-only">LinkedIn</span>
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Quick Links -->
+            <div>
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Quick Links</h3>
+                <ul class="mt-4 space-y-2">
+                    <li><a href="{% url 'issues:dashboard' %}" class="text-sm text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400">Dashboard</a></li>
+                    <li><a href="{% url 'issues:issue-list' %}" class="text-sm text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400">Report an Issue</a></li>
+                    <li><a href="#" class="text-sm text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400">View Issues Map</a></li>
+                    <li><a href="#" class="text-sm text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400">FAQ</a></li>
+                    <li><a href="#" class="text-sm text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400">Help Center</a></li>
+                </ul>
+            </div>
+            
+            <!-- Company -->
+            <div>
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Company</h3>
+                <ul class="mt-4 space-y-2">
+                    <li><a href="#" class="text-sm text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400">About Us</a></li>
+                    <li><a href="#" class="text-sm text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400">Our Team</a></li>
+                    <li><a href="#" class="text-sm text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400">Careers</a></li>
+                    <li><a href="#" class="text-sm text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400">Blog</a></li>
+                    <li><a href="#" class="text-sm text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400">Contact Us</a></li>
+                </ul>
+            </div>
+            
+            <!-- Contact Info -->
+            <div>
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Contact Us</h3>
+                <address class="mt-4 not-italic text-sm text-gray-500 dark:text-gray-400 space-y-2">
+                    <div class="flex items-start">
+                        <i class="fas fa-map-marker-alt mt-1 mr-2 text-primary-500"></i>
+                        <span>123 Main Street<br>City, State 12345<br>Country</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-phone-alt mr-2 text-primary-500"></i>
+                        <a href="tel:+1234567890" class="hover:text-primary-600 dark:hover:text-primary-400">+1 (234) 567-890</a>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-envelope mr-2 text-primary-500"></i>
+                        <a href="mailto:info@roadmaint.com" class="hover:text-primary-600 dark:hover:text-primary-400">info@roadmaint.com</a>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="far fa-clock mr-2 text-primary-500"></i>
+                        <span>Mon-Fri: 8:00 AM - 5:00 PM</span>
+                    </div>
+                </address>
+            </div>
+        </div>
+        
+        <!-- Copyright and legal links -->
+        <div class="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
+            <div class="md:flex md:items-center md:justify-between">
+                <div class="flex justify-center md:justify-start space-x-6">
+                    <a href="#" class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white">Privacy Policy</a>
+                    <span class="text-gray-400">|</span>
+                    <a href="#" class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white">Terms of Service</a>
+                    <span class="text-gray-400">|</span>
+                    <a href="#" class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white">Cookie Policy</a>
+                </div>
+                <div class="mt-4 md:mt-0 text-center md:text-right">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        &copy; {% now "Y" %} RoadMaint. All rights reserved.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Back to top button -->
+            <div class="mt-6 text-center">
+                <button @click="window.scrollTo({ top: 0, behavior: 'smooth' })" 
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                    <i class="fas fa-arrow-up mr-2"></i> Back to top
+                </button>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- Scroll to top button (fixed) -->
+<button @click="window.scrollTo({ top: 0, behavior: 'smooth' })" 
+        x-data="{ show: false }"
+        @scroll.window="show = window.scrollY > 300"
+        :class="{ 'opacity-100': show, 'opacity-0 pointer-events-none': !show }"
+        class="fixed bottom-6 right-6 z-40 p-3 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+        aria-label="Back to top">
+    <i class="fas fa-arrow-up"></i>
+</button>

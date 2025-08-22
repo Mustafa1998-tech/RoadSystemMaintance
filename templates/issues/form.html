@@ -1,0 +1,313 @@
+{% extends 'issues/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/mZEZPo5RsVZpK1ZQ0="
+      crossorigin=""/>
+<style>
+    #map { 
+        height: 300px; 
+        border-radius: 0.5rem;
+        border: 1px solid #e5e7eb;
+        z-index: 1;
+    }
+    .leaflet-container {
+        background: #f8fafc;
+    }
+    .map-container {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    .map-coordinates {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        background: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+        z-index: 1000;
+        font-size: 12px;
+    }
+    .dark .leaflet-container {
+        background: #1f2937;
+    }
+    .dark .map-coordinates {
+        background: #374151;
+        color: #f3f4f6;
+    }
+    .file-upload {
+        margin-top: 0.5rem;
+    }
+    .file-upload-preview {
+        margin-top: 0.5rem;
+    }
+    .file-upload-preview img {
+        max-width: 100px;
+        max-height: 100px;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.375rem;
+    }
+    .dark .file-upload-preview img {
+        border-color: #4b5563;
+    }
+</style>
+{% endblock %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block issues_content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">{{ title }}</h1>
+        
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 mb-6">
+                    {% for error in form.non_field_errors %}
+                        <p class="text-red-700 dark:text-red-300">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Left Column -->
+                <div class="space-y-4">
+                    {% for field in form %}
+                        {% if field.name in 'title status priority assigned_to' %}
+                            <div class="form-group">
+                                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    {{ field.label }}
+                                    {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                                </label>
+                                <div class="relative">
+                                    {{ field }}
+                                    {% if field.field.widget.input_type == 'select' %}
+                                        <div class="absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-300 pointer-events-none">
+                                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                                            </svg>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                {% if field.help_text %}
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ field.help_text }}</p>
+                                {% endif %}
+                                {% if field.errors %}
+                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    <!-- Attachments -->
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Attachments
+                        </label>
+                        <div class="file-upload">
+                            <input type="file" name="attachments" multiple 
+                                   class="block w-full text-sm text-gray-500 dark:text-gray-400
+                                          file:mr-4 file:py-2 file:px-4
+                                          file:rounded-md file:border-0
+                                          file:text-sm file:font-semibold
+                                          file:bg-blue-50 dark:file:bg-blue-900/30
+                                          file:text-blue-700 dark:file:text-blue-400
+                                          hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50">
+                            {% if form.attachments.errors %}
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.attachments.errors.0 }}</p>
+                            {% endif %}
+                            <div class="file-upload-preview flex flex-wrap mt-2">
+                                {% if form.instance.pk and form.instance.attachments.exists %}
+                                    {% for attachment in form.instance.attachments.all %}
+                                        <div class="relative mr-2 mb-2">
+                                            <img src="{{ attachment.file.url }}" alt="{{ attachment.filename }}" class="h-20 w-20 object-cover">
+                                            <a href="#" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 text-xs" 
+                                               onclick="return confirm('Are you sure you want to delete this attachment?')">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="space-y-4">
+                    {% for field in form %}
+                        {% if field.name in 'due_date location' %}
+                            <div class="form-group">
+                                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    {{ field.label }}
+                                    {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                                </label>
+                                {{ field }}
+                                {% if field.help_text %}
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ field.help_text }}</p>
+                                {% endif %}
+                                {% if field.errors %}
+                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    <!-- Hidden Fields for Map -->
+                    {{ form.latitude }}
+                    {{ form.longitude }}
+
+                    <!-- Map Container -->
+                    <div class="map-container">
+                        <div id="map"></div>
+                        <div class="map-coordinates">
+                            <span>Lat: <span id="lat-value">{{ form.latitude.value|default:'0' }}</span>, </span>
+                            <span>Lng: <span id="lng-value">{{ form.longitude.value|default:'0' }}</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+                <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {{ form.description.label }}
+                    {% if form.description.field.required %}<span class="text-red-500">*</span>{% endif %}
+                </label>
+                {{ form.description }}
+                {% if form.description.help_text %}
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ form.description.help_text }}</p>
+                {% endif %}
+                {% if form.description.errors %}
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.description.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <a href="{% url 'issues:issue-list' %}" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Cancel
+                </a>
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    {{ submit_text|default:'Save Changes' }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Include Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the map with default values or form values
+    const defaultLat = parseFloat('{{ form.latitude.value|default:24.7136 }}');
+    const defaultLng = parseFloat('{{ form.longitude.value|default:46.6753 }}');
+    const zoomLevel = 12;
+
+    // Create map instance
+    const map = L.map('map').setView([defaultLat, defaultLng], zoomLevel);
+    
+    // Add OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Create a marker
+    let marker;
+    
+    // Function to update marker position and form fields
+    function updateMarker(lat, lng) {
+        if (marker) {
+            marker.setLatLng([lat, lng]);
+        } else {
+            marker = L.marker([lat, lng], {
+                draggable: true
+            }).addTo(map);
+            
+            // Update marker position on drag
+            marker.on('dragend', function(e) {
+                const position = marker.getLatLng();
+                updateFormFields(position.lat, position.lng);
+            });
+        }
+        updateFormFields(lat, lng);
+    }
+
+    // Function to update form fields with coordinates
+    function updateFormFields(lat, lng) {
+        document.getElementById('{{ form.latitude.id_for_label }}').value = lat.toFixed(6);
+        document.getElementById('{{ form.longitude.id_for_label }}').value = lng.toFixed(6);
+        document.getElementById('lat-value').textContent = lat.toFixed(6);
+        document.getElementById('lng-value').textContent = lng.toFixed(6);
+    }
+
+    // Handle map click
+    map.on('click', function(e) {
+        updateMarker(e.latlng.lat, e.latlng.lng);
+    });
+
+    // Initialize marker if we have coordinates
+    if (defaultLat && defaultLng) {
+        updateMarker(defaultLat, defaultLng);
+    }
+
+    // Handle dark mode changes
+    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    function updateMapTheme(isDark) {
+        if (isDark) {
+            document.querySelector('.leaflet-tile').style.filter = 'invert(1) hue-rotate(180deg) brightness(0.6) contrast(1.1)';
+        } else {
+            document.querySelector('.leaflet-tile').style.filter = '';
+        }
+    }
+    
+    // Set initial theme
+    updateMapTheme(darkModeMediaQuery.matches);
+    
+    // Listen for theme changes
+    darkModeMediaQuery.addListener((e) => {
+        updateMapTheme(e.matches);
+    });
+
+    // Handle file upload preview
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const previewContainer = document.querySelector('.file-upload-preview');
+            // Clear existing previews
+            while (previewContainer.firstChild) {
+                previewContainer.removeChild(previewContainer.firstChild);
+            }
+            
+            // Show preview for each selected file
+            Array.from(e.target.files).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'h-20 w-20 object-cover';
+                        previewContainer.appendChild(img);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

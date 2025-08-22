@@ -1,0 +1,83 @@
+services:
+  - type: web
+    name: road-maintenance
+    env: docker
+    build:
+      dockerfile: Dockerfile
+    envVars:
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_SECRET_KEY
+        fromDatabase:
+          name: django-secret-key
+          property: secret
+      - key: DJANGO_ALLOWED_HOSTS
+        value: "*"
+      - key: DB_NAME
+        fromDatabase:
+          name: road-maintenance-db
+          property: dbname
+      - key: DB_USER
+        fromDatabase:
+          name: road-maintenance-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: road-maintenance-db
+          property: password
+      - key: DB_HOST
+        fromDatabase:
+          name: road-maintenance-db
+          property: host
+      - key: DB_PORT
+        value: "5432"
+      - key: CELERY_BROKER_URL
+        value: redis://redis:6379/0
+    healthCheckPath: /health/
+    plan: free
+    numInstances: 1
+    regions: ["iad1"]
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: GUNICORN_CMD_ARGS
+        value: "--workers=2 --worker-class=gevent --worker-connections=1000 --timeout 30 --keep-alive 5 --log-level=info"
+
+  - type: worker
+    name: celery-worker
+    env: docker
+    build:
+      dockerfile: Dockerfile
+    command: celery -A road_maintenance worker --loglevel=info
+    envVars:
+      - key: CELERY_BROKER_URL
+        value: redis://redis:6379/0
+      - key: DJANGO_SETTINGS_MODULE
+        value: road_maintenance.settings
+    plan: free
+    numInstances: 1
+    regions: ["iad1"]
+
+  - type: worker
+    name: celery-beat
+    env: docker
+    build:
+      dockerfile: Dockerfile
+    command: celery -A road_maintenance beat --loglevel=info
+    envVars:
+      - key: CELERY_BROKER_URL
+        value: redis://redis:6379/0
+      - key: DJANGO_SETTINGS_MODULE
+        value: road_maintenance.settings
+    plan: free
+    numInstances: 1
+    regions: ["iad1"]
+
+databases:
+  - name: road-maintenance-db
+    databaseName: road_maintenance
+    user: road_maintenance_user
+    plan: free
+    region: iad1
+
+crons: []

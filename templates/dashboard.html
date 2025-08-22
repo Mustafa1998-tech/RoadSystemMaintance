@@ -1,0 +1,412 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Dashboard - Road Maintenance System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        @apply bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden transition-all duration-200 hover:shadow-lg;
+    }
+    
+    .stat-card-header {
+        @apply px-4 py-3 bg-gray-50 dark:bg-gray-700 flex items-center justify-between;
+    }
+    
+    .stat-card-body {
+        @apply p-4 flex items-center justify-between;
+    }
+    
+    .stat-card-icon {
+        @apply p-3 rounded-full bg-opacity-20 flex-shrink-0;
+    }
+    
+    .issue-status {
+        @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    }
+    
+    .issue-priority {
+        @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <!-- Welcome Header -->
+    <div class="pb-5 border-b border-gray-200 dark:border-gray-700 sm:flex sm:items-center sm:justify-between mb-8">
+        <div>
+            <h1 class="text-2xl font-bold leading-6 text-gray-900 dark:text-white">
+                Welcome back, {{ user.get_full_name|default:user.username }}!
+            </h1>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Here's what's happening with your road maintenance tasks.
+            </p>
+        </div>
+        <div class="mt-3 sm:mt-0 sm:ml-4">
+            <a href="{% url 'issues:create' %}" 
+               class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                <i class="fas fa-plus mr-2"></i> Report New Issue
+            </a>
+        </div>
+    </div>
+    
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        <!-- Open Issues -->
+        <div class="stat-card" data-aos="fade-up" data-aos-delay="100">
+            <div class="stat-card-header">
+                <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Open Issues</h3>
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-circle text-yellow-500"></i>
+                </div>
+            </div>
+            <div class="stat-card-body">
+                <div>
+                    <p class="text-3xl font-bold text-gray-900 dark:text-white" 
+                       data-counter="{{ stats.open|default:0 }}" 
+                       data-duration="2000">0</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        <span class="text-green-600 dark:text-green-400 font-medium">
+                            <i class="fas fa-arrow-up"></i> 2.1%
+                        </span> from last month
+                    </p>
+                </div>
+                <div class="stat-card-icon bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300">
+                    <i class="fas fa-tasks text-xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- In Progress -->
+        <div class="stat-card" data-aos="fade-up" data-aos-delay="200">
+            <div class="stat-card-header">
+                <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">In Progress</h3>
+                <div class="flex-shrink-0">
+                    <i class="fas fa-tools text-blue-500"></i>
+                </div>
+            </div>
+            <div class="stat-card-body">
+                <div>
+                    <p class="text-3xl font-bold text-gray-900 dark:text-white"
+                       data-counter="{{ stats.in_progress|default:0 }}" 
+                       data-duration="2000">0</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        <span class="text-green-600 dark:text-green-400 font-medium">
+                            <i class="fas fa-arrow-up"></i> 5.3%
+                        </span> from last month
+                    </p>
+                </div>
+                <div class="stat-card-icon bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300">
+                    <i class="fas fa-tools text-xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Resolved -->
+        <div class="stat-card" data-aos="fade-up" data-aos-delay="300">
+            <div class="stat-card-header">
+                <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Resolved</h3>
+                <div class="flex-shrink-0">
+                    <i class="fas fa-check-circle text-green-500"></i>
+                </div>
+            </div>
+            <div class="stat-card-body">
+                <div>
+                    <p class="text-3xl font-bold text-gray-900 dark:text-white"
+                       data-counter="{{ stats.resolved|default:0 }}" 
+                       data-duration="2000">0</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        <span class="text-green-600 dark:text-green-400 font-medium">
+                            <i class="fas fa-arrow-up"></i> 12.4%
+                        </span> from last month
+                    </p>
+                </div>
+                <div class="stat-card-icon bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300">
+                    <i class="fas fa-check-circle text-xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Assigned to Me -->
+        <div class="stat-card" data-aos="fade-up" data-aos-delay="400">
+            <div class="stat-card-header">
+                <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Assigned to Me</h3>
+                <div class="flex-shrink-0">
+                    <i class="fas fa-user-tag text-purple-500"></i>
+                </div>
+            </div>
+            <div class="stat-card-body">
+                <div>
+                    <p class="text-3xl font-bold text-gray-900 dark:text-white"
+                       data-counter="{{ stats.assigned_to_me|default:0 }}" 
+                       data-duration="2000">0</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        <span class="text-red-600 dark:text-red-400 font-medium">
+                            <i class="fas fa-arrow-down"></i> 1.8%
+                        </span> from last month
+                    </p>
+                </div>
+                <div class="stat-card-icon bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300">
+                    <i class="fas fa-user-tag text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content Area -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Recent Issues -->
+        <div class="lg:col-span-2">
+            <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                    <h2 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">Recent Issues</h2>
+                    <a href="{% url 'issues:issue-list' %}" class="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300">
+                        View all
+                    </a>
+                </div>
+                <div class="bg-white dark:bg-gray-800 overflow-hidden">
+                    <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+                        {% for issue in recent_issues %}
+                        <li class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150">
+                            <a href="{% url 'issues:detail' issue.id %}" class="block">
+                                <div class="px-4 py-4 sm:px-6">
+                                    <div class="flex items-center justify-between">
+                                        <p class="text-sm font-medium text-primary-600 truncate dark:text-primary-400">
+                                            {{ issue.title }}
+                                        </p>
+                                        <div class="ml-2 flex-shrink-0 flex">
+                                            <span class="issue-status {% if issue.status == 'open' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200{% elif issue.status == 'in_progress' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200{% else %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200{% endif %}">
+                                                {{ issue.get_status_display }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 sm:flex sm:justify-between">
+                                        <div class="sm:flex">
+                                            <p class="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                                                <i class="fas fa-tag mr-1.5 flex-shrink-0 text-gray-400"></i>
+                                                <span class="issue-priority 
+                                                    {% if issue.priority == 'low' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
+                                                    {% elif issue.priority == 'medium' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
+                                                    {% else %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200{% endif %}">
+                                                    {{ issue.get_priority_display }}
+                                                </span>
+                                            </p>
+                                            <p class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400 sm:mt-0 sm:ml-6">
+                                                <i class="fas fa-user-tag mr-1.5 flex-shrink-0 text-gray-400"></i>
+                                                {% if issue.assigned_to %}
+                                                    {{ issue.assigned_to.get_full_name|default:issue.assigned_to.username }}
+                                                {% else %}
+                                                    Unassigned
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                        <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400 sm:mt-0">
+                                            <i class="far fa-calendar-alt mr-1.5 flex-shrink-0 text-gray-400"></i>
+                                            <p>
+                                                <time datetime="{{ issue.created_at|date:'Y-m-d' }}">
+                                                    {{ issue.created_at|naturaltime }}
+                                                </time>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                        {% empty %}
+                        <li class="px-4 py-5 sm:px-6 text-center">
+                            <p class="text-gray-500 dark:text-gray-400">No recent issues found.</p>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions & Recent Activity -->
+        <div class="space-y-6">
+            <!-- Quick Actions -->
+            <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6">
+                    <h2 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">Quick Actions</h2>
+                </div>
+                <div class="border-t border-gray-200 dark:border-gray-700 px-4 py-5 sm:p-6">
+                    <div class="grid grid-cols-1 gap-4">
+                        <a href="{% url 'issues:create' %}" 
+                           class="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            <i class="fas fa-plus-circle mr-2"></i> Create New Issue
+                        </a>
+                        <a href="{% url 'issues:issue-list' %}?assigned_to_me=1" 
+                           class="inline-flex items-center justify-center px-4 py-3 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            <i class="fas fa-tasks mr-2"></i> View My Tasks
+                        </a>
+                        <a href="{% url 'issues:map' %}" 
+                           class="inline-flex items-center justify-center px-4 py-3 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            <i class="fas fa-map-marked-alt mr-2"></i> View Issues Map
+                        </a>
+                        {% if user.is_staff %}
+                        <a href="{% url 'admin:index' %}" 
+                           class="inline-flex items-center justify-center px-4 py-3 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            <i class="fas fa-cog mr-2"></i> Admin Panel
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">Recent Activity</h2>
+                </div>
+                <div class="flow-root px-4 py-5 sm:px-6">
+                    {% if recent_activity %}
+                    <ul class="space-y-4">
+                        {% for activity in recent_activity %}
+                        <li class="relative">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0">
+                                    <div class="h-8 w-8 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
+                                        <i class="fas fa-{{ activity.get_icon }} text-primary-600 dark:text-primary-300"></i>
+                                    </div>
+                                </div>
+                                <div class="ml-3 flex-1 min-w-0">
+                                    <p class="text-sm text-gray-700 dark:text-gray-200">
+                                        <span class="font-medium">{{ activity.changed_by.get_full_name|default:activity.changed_by.username }}</span>
+                                        {{ activity.get_action_display }}
+                                        {% if activity.issue %}
+                                        <a href="{% url 'issues:detail' activity.issue.id %}" class="font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300">
+                                            {{ activity.issue.title|truncatechars:30 }}
+                                        </a>
+                                        {% endif %}
+                                    </p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                                        <time datetime="{{ activity.changed_at|date:'Y-m-d\TH:i:sO' }}">
+                                            {{ activity.changed_at|naturaltime }}
+                                        </time>
+                                    </p>
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <div class="mt-6">
+                        <a href="#" class="block text-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                            View all activity
+                        </a>
+                    </div>
+                    {% else %}
+                    <p class="text-center text-gray-500 dark:text-gray-400 py-4">No recent activity.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stats Overview (Bottom Section) -->
+    <div class="mt-8">
+        <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:px-6">
+                <h2 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">Monthly Overview</h2>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Track the progress of reported issues over the past 6 months.
+                </p>
+            </div>
+            <div class="border-t border-gray-200 dark:border-gray-700 px-4 py-5 sm:p-6">
+                <div class="h-64">
+                    <!-- Chart will be rendered here by Chart.js -->
+                    <canvas id="monthlyStatsChart" class="w-full h-full"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize monthly stats chart
+        const ctx = document.getElementById('monthlyStatsChart').getContext('2d');
+        const monthlyStatsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [
+                    {
+                        label: 'Reported',
+                        data: [12, 19, 15, 24, 18, 22],
+                        borderColor: 'rgb(99, 102, 241)',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'Resolved',
+                        data: [8, 12, 10, 15, 14, 18],
+                        borderColor: 'rgb(16, 185, 129)',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: window.matchMedia('(prefers-color-scheme: dark)').matches ? '#fff' : '#374151'
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false,
+                            color: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            color: window.matchMedia('(prefers-color-scheme: dark)').matches ? '#9CA3AF' : '#6B7280'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            color: window.matchMedia('(prefers-color-scheme: dark)').matches ? '#9CA3AF' : '#6B7280'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Update chart colors when dark mode changes
+        const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        darkModeMediaQuery.addListener((e) => {
+            const isDarkMode = e.matches;
+            
+            // Update chart text colors
+            const textColor = isDarkMode ? '#9CA3AF' : '#6B7280';
+            const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
+            
+            monthlyStatsChart.options.scales.x.ticks.color = textColor;
+            monthlyStatsChart.options.scales.y.ticks.color = textColor;
+            monthlyStatsChart.options.scales.x.grid.color = gridColor;
+            monthlyStatsChart.options.scales.y.grid.color = gridColor;
+            monthlyStatsChart.options.plugins.legend.labels.color = isDarkMode ? '#fff' : '#374151';
+            
+            monthlyStatsChart.update();
+        });
+    });
+</script>
+{% endblock %}

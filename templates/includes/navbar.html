@@ -1,0 +1,248 @@
+<!-- Navigation -->
+<nav class="fixed top-0 left-0 right-0 z-30 bg-white dark:bg-gray-800 shadow-md transition-colors duration-200"
+     x-data="{ scrolled: false, isMobileMenuOpen: false }"
+     @scroll.window="scrolled = window.scrollY > 10"
+     :class="{ 'shadow-lg': scrolled }">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+            <!-- Logo and main navigation -->
+            <div class="flex items-center">
+                <!-- Mobile menu button -->
+                <div class="flex-shrink-0 flex items-center lg:hidden">
+                    <button @click="isMobileMenuOpen = !isMobileMenuOpen" type="button" 
+                            class="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white focus:outline-none"
+                            :aria-expanded="isMobileMenuOpen">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="h-6 w-6" x-show="!isMobileMenuOpen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" x-cloak>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                        <svg class="h-6 w-6" x-show="isMobileMenuOpen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" x-cloak>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center">
+                    <a href="{% url 'issues:dashboard' %}" class="flex items-center">
+                        <div class="h-8 w-8 rounded-full bg-primary-500 flex items-center justify-center text-white font-bold">
+                            <i class="fas fa-road"></i>
+                        </div>
+                        <span class="ml-2 text-xl font-bold text-gray-900 dark:text-white">RoadMaint</span>
+                    </a>
+                </div>
+                
+                <!-- Desktop navigation -->
+                <div class="hidden lg:ml-10 lg:flex lg:space-x-8">
+                    <a href="{% url 'issues:dashboard' %}" 
+                       class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium {% if request.resolver_match.url_name == 'dashboard' %}border-primary-500 text-gray-900 dark:text-white{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"{% endif %}">
+                        <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+                    </a>
+                    <a href="{% url 'issues:issue-list' %}" 
+                       class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium {% if 'issues' in request.resolver_match.url_name and request.resolver_match.url_name != 'dashboard' %}border-primary-500 text-gray-900 dark:text-white{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"{% endif %}">
+                        <i class="fas fa-tasks mr-2"></i> Issues
+                    </a>
+                    {% if user.is_staff %}
+                    <a href="{% url 'admin:index' %}" 
+                       class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white">
+                        <i class="fas fa-cog mr-2"></i> Admin
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Right side navigation -->
+            <div class="flex items-center">
+                <!-- Search bar (desktop) -->
+                <div class="hidden lg:block relative mx-4">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    <input type="text" 
+                           class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                           placeholder="Search..."
+                           hx-get="{% url 'issues:issue-list' %}"
+                           hx-trigger="keyup changed delay:500ms"
+                           hx-target="#issues-list"
+                           hx-params="q"
+                           name="q">
+                </div>
+                
+                <!-- Notifications -->
+                <div class="ml-4 relative" x-data="{ isOpen: false }">
+                    <button @click="isOpen = !isOpen" 
+                            class="p-1 rounded-full text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <span class="sr-only">View notifications</span>
+                        <div class="relative">
+                            <i class="far fa-bell text-xl"></i>
+                            <span class="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
+                        </div>
+                    </button>
+                    
+                    <!-- Notifications dropdown -->
+                    <div x-show="isOpen" 
+                         @click.away="isOpen = false"
+                         x-transition:enter="transition ease-out duration-100"
+                         x-transition:enter-start="transform opacity-0 scale-95"
+                         x-transition:enter-end="transform opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-75"
+                         x-transition:leave-start="transform opacity-100 scale-100"
+                         x-transition:leave-end="transform opacity-0 scale-95"
+                         class="origin-top-right absolute right-0 mt-2 w-80 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+                         style="display: none;">
+                        <div class="py-1">
+                            <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                                <p class="text-sm font-medium text-gray-700 dark:text-gray-200">Notifications</p>
+                            </div>
+                            <div class="max-h-96 overflow-y-auto">
+                                <!-- Notification items would go here -->
+                                <a href="#" class="block px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0">
+                                            <div class="h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
+                                                <i class="fas fa-ticket-alt text-primary-600 dark:text-primary-300"></i>
+                                            </div>
+                                        </div>
+                                        <div class="ml-3 flex-1">
+                                            <p class="text-sm font-medium text-gray-900 dark:text-white">New issue assigned to you</p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">Pothole on Main St needs attention</p>
+                                            <p class="text-xs text-gray-400 dark:text-gray-500">2 hours ago</p>
+                                        </div>
+                                    </div>
+                                </a>
+                                <!-- More notification items... -->
+                            </div>
+                            <div class="px-4 py-2 border-t border-gray-200 dark:border-gray-700 text-center">
+                                <a href="#" class="text-sm font-medium text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300">
+                                    View all notifications
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Dark mode toggle -->
+                <div class="ml-4">
+                    <button @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode); $el.classList.toggle('dark', darkMode)" 
+                            class="p-1 rounded-full text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <span class="sr-only">Toggle dark mode</span>
+                        <i class="fas fa-moon dark:hidden"></i>
+                        <i class="fas fa-sun hidden dark:block"></i>
+                    </button>
+                </div>
+                
+                <!-- User menu -->
+                {% if user.is_authenticated %}
+                <div class="ml-4 relative" x-data="{ isOpen: false }">
+                    <button @click="isOpen = !isOpen" 
+                            class="flex items-center max-w-xs rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                            id="user-menu">
+                        <span class="sr-only">Open user menu</span>
+                        <div class="h-8 w-8 rounded-full bg-primary-500 text-white flex items-center justify-center">
+                            {% if user.get_initials %}
+                                {{ user.get_initials|first|upper }}
+                            {% elif user.username %}
+                                {{ user.username|first|upper }}
+                            {% else %}
+                                U
+                            {% endif %}
+                        </div>
+                        <span class="hidden md:block ml-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+                            {{ user.get_full_name|default:user.username }}
+                        </span>
+                        <i class="hidden md:block ml-1 fas fa-chevron-down text-xs text-gray-500"></i>
+                    </button>
+                    
+                    <!-- User dropdown -->
+                    <div x-show="isOpen" 
+                         @click.away="isOpen = false"
+                         x-transition:enter="transition ease-out duration-100"
+                         x-transition:enter-start="transform opacity-0 scale-95"
+                         x-transition:enter-end="transform opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-75"
+                         x-transition:leave-start="transform opacity-100 scale-100"
+                         x-transition:leave-end="transform opacity-0 scale-95"
+                         class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+                         style="display: none;"
+                         role="menu"
+                         aria-orientation="vertical"
+                         aria-labelledby="user-menu">
+                        <div class="py-1">
+                            <a href="{% url 'accounts:profile' %}" 
+                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                               role="menuitem">
+                                <i class="fas fa-user-circle mr-2"></i> Your Profile
+                            </a>
+                            <a href="{% url 'accounts:password_change' %}" 
+                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                               role="menuitem">
+                                <i class="fas fa-key mr-2"></i> Change Password
+                            </a>
+                            <div class="border-t border-gray-100 dark:border-gray-700"></div>
+                            <form method="post" action="{% url 'accounts:logout' %}">
+                                {% csrf_token %}
+                                <button type="submit" 
+                                        class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                                        role="menuitem">
+                                    <i class="fas fa-sign-out-alt mr-2"></i> Sign out
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="ml-4">
+                    <a href="{% url 'accounts:login' %}" class="text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-200 dark:hover:text-white">
+                        Sign in
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mobile menu -->
+    <div x-show="isMobileMenuOpen" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="lg:hidden"
+         x-cloak>
+        <div class="pt-2 pb-3 space-y-1 bg-white dark:bg-gray-800 shadow-lg">
+            <a href="{% url 'issues:dashboard' %}" 
+               class="block pl-3 pr-4 py-2 border-l-4 text-base font-medium {% if request.resolver_match.url_name == 'dashboard' %}border-primary-500 bg-primary-50 text-primary-700 dark:bg-gray-700 dark:text-white{% else %}border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"{% endif %}">
+                <i class="fas fa-tachometer-alt mr-2 w-5 text-center"></i> Dashboard
+            </a>
+            <a href="{% url 'issues:issue-list' %}" 
+               class="block pl-3 pr-4 py-2 border-l-4 text-base font-medium {% if 'issues' in request.resolver_match.url_name and request.resolver_match.url_name != 'dashboard' %}border-primary-500 bg-primary-50 text-primary-700 dark:bg-gray-700 dark:text-white{% else %}border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"{% endif %}">
+                <i class="fas fa-tasks mr-2 w-5 text-center"></i> Issues
+            </a>
+            {% if user.is_staff %}
+            <a href="{% url 'admin:index' %}" 
+               class="block pl-3 pr-4 py-2 border-l-4 text-base font-medium border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white">
+                <i class="fas fa-cog mr-2 w-5 text-center"></i> Admin
+            </a>
+            {% endif %}
+            
+            <!-- Mobile search -->
+            <div class="px-4 pt-4 pb-2">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    <input type="text" 
+                           class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                           placeholder="Search..."
+                           hx-get="{% url 'issues:issue-list' %}"
+                           hx-trigger="keyup changed delay:500ms"
+                           hx-target="#issues-list"
+                           hx-params="q"
+                           name="q">
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
