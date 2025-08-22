@@ -1,11 +1,18 @@
 # Python
 __pycache__/
 *.py[cod]
+*.pyo
+*.pyd
 *.class
 *.so
-.Python
+*.egg
+*.egg-info/
+.installed.cfg
+*.manifest
+*.spec
+
+# Build / Distribution
 build/
-develop-eggs/
 dist/
 downloads/
 eggs/
@@ -14,34 +21,34 @@ lib/
 lib64/
 parts/
 sdist/
-var/
 wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
 
 # Virtual Environment
 venv/
+.venv/
 ENV/
-
-# Database
-*.sqlite3
-*.db
-
-# Environment variables
 .env
 
-# IDE
+# IDE / Editor
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Logs
+# Logs / Test reports
 *.log
+.coverage
+htmlcov/
+.pytest_cache/
+mypy_cache/
+
+# Database
+*.sqlite3
+*.db
 
 # Docker
 .dockerignore
 docker-compose.override.yml
 
+# Poetry
+poetry.lock
